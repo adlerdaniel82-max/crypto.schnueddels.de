@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Trader — crypto.schnueddels.de</title>
+  <link rel="stylesheet" href="https://schnueddels.de/assets/css/schnueddels-ui.css?v=20260508a" data-sd-ui-css="true">
+  <script defer src="https://schnueddels.de/assets/js/schnueddels-header.js?v=20260508a" data-project="Crypto Trader"></script>
+  <link rel="stylesheet" href="./src/styles/trader.css?v=20260526a">
+</head>
+<body class="sd-app crypto-trader-app">
+
+  <div id="login-screen" hidden>
+    <div class="login-card">
+      <h2>Master-Zugang erforderlich</h2>
+      <p>Der Auto-Trader ist nur mit aktiver Master-Session erreichbar.</p>
+      <a class="btn" href="https://schnueddels.de/auth/?redirect=https%3A%2F%2Fcrypto.schnueddels.de%2Ftrade%2F">Anmelden</a>
+      <p id="login-error" class="error-text" hidden>Master-Session fehlt oder ist abgelaufen.</p>
+    </div>
+  </div>
+
+  <div id="app" hidden>
+    <header class="app-header">
+      <h1>Trader</h1>
+      <div id="status-bar" class="status-bar">
+        <span id="badge-dryrun" class="badge badge--warn">DRY-RUN</span>
+        <span id="badge-paused" class="badge badge--danger" hidden>PAUSIERT</span>
+        <span id="badge-mode" class="badge badge--mode">LONG</span>
+        <span id="badge-signal" class="badge">Signal API: –</span>
+        <span id="badge-dryrun-cash" class="badge badge--ok">Cash: –</span>
+        <span id="badge-dryrun-theoretical" class="badge badge--warn">Theorie: –</span>
+        <span id="last-cycle" class="muted">–</span>
+      </div>
+      <button id="btn-logout" class="btn btn--ghost">Abmelden</button>
+    </header>
+
+    <main class="main-grid">
+
+      <section class="card">
+        <h2>Konfiguration</h2>
+        <form id="config-form" class="config-form">
+          <label>
+            <span>Dry-Run</span>
+            <input id="cfg-dryrun" type="checkbox">
+          </label>
+          <label>
+            <span>Pausiert</span>
+            <input id="cfg-paused" type="checkbox">
+          </label>
+          <label>
+            <span>Handelsmodus</span>
+            <select id="cfg-mode">
+              <option value="long">LONG (1d + 4h)</option>
+              <option value="short">SHORT (4h + 1h)</option>
+            </select>
+          </label>
+          <label>
+            <span>Partial Exit (%)</span>
+            <input id="cfg-partial-exit" type="number" step="1" min="0" max="99" value="0">
+          </label>
+          <label>
+            <span>Gesamtbudget (EUR)</span>
+            <input id="cfg-budget" type="number" step="0.01" min="0">
+          </label>
+          <label>
+            <span>Max. pro Coin (EUR)</span>
+            <input id="cfg-maxcoin" type="number" step="0.01" min="0">
+          </label>
+          <label>
+            <span>Stop-Loss (%)</span>
+            <input id="cfg-stoploss" type="number" step="0.1" min="0" max="50">
+          </label>
+          <div class="form-actions">
+            <button type="submit" class="btn">Speichern</button>
+            <span id="cfg-status" class="muted"></span>
+          </div>
+        </form>
+      </section>
+
+      <section class="card actions-card">
+        <h2>Aktionen</h2>
+        <div class="action-buttons">
+          <button id="btn-run" class="btn">Zyklus jetzt ausführen</button>
+          <button id="btn-stop" class="btn btn--danger">Notfall-Stop</button>
+        </div>
+        <pre id="run-output" class="run-output"></pre>
+      </section>
+
+      <section class="card full-width">
+        <h2>Offene Positionen <span id="pos-count" class="muted"></span></h2>
+        <div id="positions-table" class="table-wrap">
+          <div class="empty">Keine offenen Positionen.</div>
+        </div>
+      </section>
+
+      <section class="card full-width">
+        <h2>Letzte Orders</h2>
+        <div id="orders-table" class="table-wrap">
+          <div class="empty">Keine Orders.</div>
+        </div>
+        <div id="orders-pager" class="orders-pager"></div>
+      </section>
+
+      <section class="card full-width">
+        <h2>Letzte Zyklen <span id="cycle-runs-count" class="muted"></span></h2>
+        <div id="cycle-runs-trend" class="cycle-runs-trend"></div>
+        <div id="cycle-runs-summary" class="cycle-runs-summary"></div>
+        <div id="cycle-runs-table" class="table-wrap">
+          <div class="empty">Keine Zyklusdaten.</div>
+        </div>
+      </section>
+
+      <section class="card full-width log-panel">
+        <div class="log-panel__header">
+          <h2>Debug — Trader-Zyklus</h2>
+          <div class="log-panel__controls">
+            <span id="log-meta" class="muted"></span>
+            <button id="log-refresh" class="btn btn--ghost" type="button">Aktualisieren</button>
+            <button id="log-clear-out" class="btn btn--ghost" type="button">Zyklus stdout leeren</button>
+            <button id="log-clear-err" class="btn btn--ghost" type="button">Fehlerlog leeren</button>
+            <label class="log-autorefresh">
+              <input id="log-auto" type="checkbox" checked>
+              <span class="muted">Auto (10s)</span>
+            </label>
+          </div>
+        </div>
+        <div class="log-tabs">
+          <button class="log-tab is-active" data-log="out" type="button">Zyklus stdout</button>
+          <button class="log-tab" data-log="err" type="button">Fehler</button>
+        </div>
+        <pre id="log-output" class="log-output">Wird geladen …</pre>
+      </section>
+
+    </main>
+  </div>
+
+  <script type="module" src="./src/trader.js?v=20260526a"></script>
+</body>
+</html>

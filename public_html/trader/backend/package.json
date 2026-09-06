@@ -1,0 +1,19 @@
+{
+  "name": "crypto-trader",
+  "version": "1.0.0",
+  "description": "Auto-trader for crypto.schnueddels.de",
+  "main": "src/server.js",
+  "scripts": {
+    "start": "node src/server.js",
+    "job:trade-loop": "node src/jobs/trade-loop.js",
+    "test": "node --test test/*.test.js"
+  },
+  "dependencies": {
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.5",
+    "express": "^4.21.2",
+    "express-rate-limit": "^8.4.1",
+    "helmet": "^8.1.0",
+    "mysql2": "^3.14.1"
+  }
+}

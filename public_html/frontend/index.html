@@ -1,0 +1,430 @@
+<!doctype html>
+<html lang="de">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Crypto Signal Dashboard</title>
+    <meta
+      name="description"
+      content="Operatives Dashboard fuer Krypto-Signale mit Coins, Charts und regelbasierten Indikatoren."
+    >
+    <meta name="theme-color" content="#06111a">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600&family=Inter:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    >
+    <link rel="stylesheet" href="https://schnueddels.de/assets/css/schnueddels-ui.css?v=20260508a" data-sd-ui-css="true">
+    <script defer src="https://schnueddels.de/assets/js/schnueddels-header.js?v=20260508a" data-project="Crypto"></script>
+    <link rel="stylesheet" href="./src/styles/app.css?v=20260526a">
+  </head>
+  <body class="sd-app crypto-app">
+    <div class="app-shell">
+      <header class="panel app-header">
+        <div class="app-header__brand">
+          <div>
+            <p class="brand-mark">Schnueddels Media</p>
+            <h1>Crypto Signal Dashboard</h1>
+          </div>
+        </div>
+        <div class="app-header__metrics">
+          <div id="stats-grid" class="stats-grid"></div>
+        </div>
+        <div class="app-header__actions">
+          <span class="section-meta">Backend Status</span>
+          <span id="backend-status" class="status-badge">Initialisiere ...</span>
+          <button id="paper-overlay-open" class="text-button" type="button" hidden>
+            Paper-Trading
+          </button>
+          <button id="portfolio-overlay-open" class="text-button" type="button" hidden>
+            Portfolio
+          </button>
+          <button id="admin-overlay-open" class="text-button" type="button" hidden>
+            Master
+          </button>
+          <button id="refresh-button" class="text-button" type="button" aria-label="Aktualisieren">
+            Neu laden
+          </button>
+        </div>
+      </header>
+
+      <div class="deck-grid">
+        <aside class="panel matrix-panel">
+          <div class="section-header">
+            <div>
+              <h2>Coins / Währungen</h2>
+              <span id="matrix-meta" class="section-meta">letzte Bewertung je Coin</span>
+            </div>
+            <div class="matrix-toolbar">
+              <label class="field field--compact">
+                <span>Filter</span>
+                <select id="matrix-filter">
+                  <option value="all" selected>Alle</option>
+                  <option value="top_market">Top 20</option>
+                  <option value="entry_ready">1d + 4h Buy</option>
+                  <option value="primary_buy">1d Buy</option>
+                  <option value="entry_waiting">Auf 4h warten</option>
+                  <option value="blocked">Durch 1d blockiert</option>
+                </select>
+              </label>
+              <label class="field field--compact">
+                <span>Sortierung</span>
+                <select id="matrix-sort">
+                  <option value="relevance" selected>Relevanz</option>
+                  <option value="signal">Signal</option>
+                  <option value="symbol">Symbol</option>
+                  <option value="price_desc">Preis absteigend</option>
+                </select>
+              </label>
+              <button id="trade-mode-toggle" class="text-button text-button--small" type="button">LONG</button>
+            </div>
+          </div>
+          <div id="matrix-group-summary" class="matrix-group-summary"></div>
+          <div class="table-shell">
+            <table class="signal-table">
+              <thead>
+                <tr>
+                  <th>Coin</th>
+                  <th>Signal</th>
+                  <th>Preis</th>
+                  <th>RSI</th>
+                  <th>EMA20</th>
+                  <th>EMA50</th>
+                  <th>Volumen</th>
+                </tr>
+              </thead>
+              <tbody id="signal-table-body">
+                <tr>
+                  <td colspan="7" class="empty-state">Keine Marktdaten geladen.</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </aside>
+
+        <main class="center-stage">
+          <section class="panel hero-panel" aria-label="Signaluebersicht">
+            <div class="hero-panel__header">
+              <div class="hero-panel__titlebar">
+                <div>
+                  <p class="eyebrow">Signalstatus</p>
+                  <h2>Markt</h2>
+                </div>
+                <button id="settings-overlay-open" class="icon-button" type="button" aria-label="Signal-Regeln anzeigen">
+                  ?
+                </button>
+              </div>
+              <div class="hero-panel__controls">
+                <button id="backtests-overlay-open" class="text-button text-button--small" type="button">
+                  Backtest
+                </button>
+                <button id="sources-overlay-open" class="text-button text-button--small" type="button">
+                  Quellen
+                </button>
+                <div id="last-sync" class="hero-panel__timestamp">Noch kein Abruf</div>
+                <div id="timeframe-switch" class="timeframe-switch" role="tablist" aria-label="Timeframe"></div>
+              </div>
+            </div>
+            <div class="hero-compact">
+              <div id="overview-strip" class="overview-strip overview-strip--compact"></div>
+              <div id="strategy-list" class="strategy-list strategy-list--compact"></div>
+            </div>
+          </section>
+
+          <section class="panel rationale-panel">
+            <div class="section-header">
+              <h2>Daten & Charts</h2>
+              <span id="rationale-meta" class="section-meta">Noch keine Auswahl</span>
+            </div>
+            <div id="signal-detail" class="signal-detail">
+              <div class="empty-state empty-state--block">
+                Waehle einen Coin aus der Matrix.
+              </div>
+            </div>
+          </section>
+        </main>
+      </div>
+    </div>
+
+    <div id="admin-overlay" class="overlay" hidden>
+      <div id="admin-overlay-backdrop" class="overlay__backdrop"></div>
+      <section class="overlay__dialog overlay__dialog--admin" role="dialog" aria-modal="true" aria-labelledby="admin-overlay-title">
+        <div class="overlay__header">
+          <div>
+            <p class="eyebrow">Master</p>
+            <h3 id="admin-overlay-title">Coin-Verwaltung</h3>
+          </div>
+          <div class="overlay__actions">
+            <button id="admin-overlay-close" class="icon-button" type="button" aria-label="Master schliessen">
+              ×
+            </button>
+          </div>
+        </div>
+
+        <div class="admin-auth-note">
+          Zugriff nur ueber Schnueddel-Login mit Master-Rechten.
+        </div>
+
+        <div id="admin-status" class="admin-inline-status">Master-Zugriff wird geprueft.</div>
+
+        <form id="admin-coin-form" class="admin-form">
+          <div class="admin-grid">
+            <label class="field">
+              <span>Quote</span>
+              <select name="quote_asset">
+                <option value="EUR" selected>EUR</option>
+                <option value="USD">USD</option>
+                <option value="USDT">USDT</option>
+                <option value="BTC">BTC</option>
+              </select>
+            </label>
+            <label class="field">
+              <span>Coin</span>
+              <input
+                name="coin_search"
+                type="search"
+                list="admin-pair-suggestions"
+                placeholder="Freitextsuche - alternativ aus Dropdown wählen"
+                autocomplete="off"
+              >
+              <datalist id="admin-pair-suggestions"></datalist>
+              <select name="kraken_pair" required>
+                <option value="">Kraken-Coins werden geladen ...</option>
+              </select>
+            </label>
+            <label class="field">
+              <span>Standard-Timeframe</span>
+              <select name="default_timeframe">
+                <option value="5m">5m</option>
+                <option value="15m">15m</option>
+                <option value="1h">1h</option>
+                <option value="4h" selected>4h</option>
+                <option value="1d">1d</option>
+              </select>
+            </label>
+            <label class="field">
+              <span>Sortierung</span>
+              <input name="sort_order" type="number" min="1" max="9999" step="1" value="100">
+            </label>
+            <input name="name" type="hidden">
+            <input name="base_asset" type="hidden">
+            <input name="exchange_symbol" type="hidden">
+          </div>
+          <div id="admin-coin-preview" class="admin-selection-preview">Freitextsuche nutzen oder aus Dropdown wählen.</div>
+          <button class="text-button" type="submit">Coin anlegen</button>
+        </form>
+
+        <div id="admin-coins-list" class="admin-coins-list">
+          <div class="empty-state">Master-Zugriff wird geprueft.</div>
+        </div>
+      </section>
+    </div>
+
+    <div id="settings-overlay" class="overlay" hidden>
+      <div id="settings-overlay-backdrop" class="overlay__backdrop"></div>
+      <section class="overlay__dialog" role="dialog" aria-modal="true" aria-labelledby="settings-overlay-title">
+        <div class="overlay__header">
+          <div>
+            <p class="eyebrow">Regelprofil</p>
+            <h3 id="settings-overlay-title">Signal-Regeln</h3>
+          </div>
+          <div class="overlay__actions">
+            <span id="settings-meta" class="section-meta">0 Profile</span>
+            <button id="settings-overlay-close" class="icon-button" type="button" aria-label="Signal-Regeln schliessen">
+              ×
+            </button>
+          </div>
+        </div>
+        <div id="settings-list" class="settings-list"></div>
+      </section>
+    </div>
+
+    <div id="sources-overlay" class="overlay" hidden>
+      <div id="sources-overlay-backdrop" class="overlay__backdrop"></div>
+      <section class="overlay__dialog" role="dialog" aria-modal="true" aria-labelledby="sources-overlay-title">
+        <div class="overlay__header">
+          <div>
+            <p class="eyebrow">Datenbasis</p>
+            <h3 id="sources-overlay-title">Datenquellen</h3>
+          </div>
+          <div class="overlay__actions">
+            <button id="sources-overlay-close" class="icon-button" type="button" aria-label="Datenquellen schliessen">
+              ×
+            </button>
+          </div>
+        </div>
+        <div class="source-list">
+          <article class="source-card">
+            <div>
+              <strong>Kraken Public</strong>
+              <p>Oeffentliche Marktpreise und Kerzen ohne privaten API-Key.</p>
+            </div>
+            <span class="source-pill">read only</span>
+          </article>
+          <article class="source-card">
+            <div>
+              <strong>CoinGecko</strong>
+              <p>Fallback fuer Marktuebersicht, Asset-Metadaten und spaetere Vergleichswerte.</p>
+            </div>
+            <span class="source-pill">optional</span>
+          </article>
+        </div>
+      </section>
+    </div>
+
+    <div id="backtests-overlay" class="overlay" hidden>
+      <div id="backtests-overlay-backdrop" class="overlay__backdrop"></div>
+      <section class="overlay__dialog overlay__dialog--wide" role="dialog" aria-modal="true" aria-labelledby="backtests-overlay-title">
+        <div class="overlay__header">
+          <div>
+            <p class="eyebrow">Backtest</p>
+            <h3 id="backtests-overlay-title">Strategie-Rueckblick</h3>
+          </div>
+          <div class="overlay__actions">
+            <span id="backtests-meta" class="section-meta">Wird geladen ...</span>
+            <button id="backtests-overlay-close" class="icon-button" type="button" aria-label="Backtest schliessen">
+              ×
+            </button>
+          </div>
+        </div>
+        <div id="backtests-summary" class="backtests-summary">
+          <div class="empty-state">Backtest wird geladen.</div>
+        </div>
+        <div id="backtests-detail" class="backtests-detail">
+          <div class="empty-state empty-state--block">Noch keine Backtest-Daten.</div>
+        </div>
+      </section>
+    </div>
+
+    <div id="portfolio-overlay" class="overlay" hidden>
+      <div id="portfolio-overlay-backdrop" class="overlay__backdrop"></div>
+      <section class="overlay__dialog overlay__dialog--wide" role="dialog" aria-modal="true" aria-labelledby="portfolio-overlay-title">
+        <div class="overlay__header">
+          <div>
+            <p class="eyebrow">Exchange</p>
+            <h3 id="portfolio-overlay-title">Portfolio</h3>
+          </div>
+          <div class="overlay__actions">
+            <span id="portfolio-meta" class="section-meta">Noch kein Abruf</span>
+            <button id="portfolio-fetch-button" class="text-button text-button--small" type="button">
+              Aktualisieren
+            </button>
+            <button id="portfolio-overlay-close" class="icon-button" type="button" aria-label="Portfolio schliessen">
+              ×
+            </button>
+          </div>
+        </div>
+        <div id="portfolio-status" class="admin-inline-status"></div>
+        <div class="portfolio-grid">
+          <section>
+            <p class="eyebrow">Kontostand</p>
+            <div id="portfolio-balances" class="portfolio-table-wrap">
+              <div class="empty-state">Noch kein Abruf.</div>
+            </div>
+          </section>
+          <section>
+            <p class="eyebrow">Offene Orders</p>
+            <div id="portfolio-orders" class="portfolio-table-wrap">
+              <div class="empty-state">Keine offenen Orders.</div>
+            </div>
+          </section>
+        </div>
+        <section class="portfolio-cycle-panel">
+          <div class="overlay__header">
+            <div>
+              <p class="eyebrow">Trader</p>
+              <h4>Zyklus-Historie</h4>
+            </div>
+            <span id="portfolio-cycle-meta" class="section-meta">Letzte 50 Zyklen</span>
+          </div>
+          <div id="portfolio-cycle-trend" class="portfolio-cycle-trend"></div>
+          <div id="portfolio-cycle-summary" class="portfolio-cycle-summary"></div>
+          <div id="portfolio-cycle-runs" class="portfolio-table-wrap">
+            <div class="empty-state">Noch keine Zyklusdaten.</div>
+          </div>
+        </section>
+      </section>
+    </div>
+
+    <div id="paper-overlay" class="overlay" hidden>
+      <div id="paper-overlay-backdrop" class="overlay__backdrop"></div>
+      <section class="overlay__dialog overlay__dialog--wide" role="dialog" aria-modal="true" aria-labelledby="paper-overlay-title">
+        <div class="overlay__header">
+          <div>
+            <p class="eyebrow">Paper-Trading</p>
+            <h3 id="paper-overlay-title">Spielgeld-Portfolio</h3>
+          </div>
+          <div class="overlay__actions">
+            <span id="paper-meta" class="section-meta">Noch nicht geladen</span>
+            <button id="paper-reset-button" class="text-button text-button--small" type="button">
+              Zurücksetzen
+            </button>
+            <button id="paper-overlay-close" class="icon-button" type="button" aria-label="Paper-Trading schliessen">
+              ×
+            </button>
+          </div>
+        </div>
+        <div id="paper-status" class="admin-inline-status"></div>
+        <div id="paper-summary" class="cycle-summary-grid">
+          <div class="empty-state">Paper-Trading wird geladen.</div>
+        </div>
+        <section class="portfolio-cycle-panel">
+          <div class="section-heading">
+            <div>
+              <p class="eyebrow">Taler</p>
+              <h4>Taler tauschen</h4>
+            </div>
+            <span id="paper-exchange-meta" class="section-meta">10 Taler = 100 EUR</span>
+          </div>
+          <div id="paper-exchange-summary" class="cycle-summary-grid">
+            <div class="empty-state">Tauschdaten werden geladen.</div>
+          </div>
+          <div class="paper-trade-form">
+            <form id="paper-deposit-form" class="paper-trade-form">
+              <label class="field">
+                <span>Taler einzahlen</span>
+                <input name="taler_amount" type="number" min="1" step="1" value="10">
+              </label>
+              <button class="text-button" type="submit">In Spielgeld tauschen</button>
+            </form>
+            <form id="paper-withdraw-form" class="paper-trade-form">
+              <label class="field">
+                <span>EUR auszahlen</span>
+                <input name="amount_eur" type="number" min="10" step="10" value="100">
+              </label>
+              <button class="text-button" type="submit">In Taler tauschen</button>
+            </form>
+          </div>
+        </section>
+        <form id="paper-buy-form" class="paper-trade-form">
+          <label class="field">
+            <span>Coin</span>
+            <select name="symbol" id="paper-buy-symbol"></select>
+          </label>
+          <label class="field">
+            <span>Betrag EUR</span>
+            <input name="amount_eur" type="number" min="1" step="1" value="100">
+          </label>
+          <button class="text-button" type="submit">Kaufen</button>
+        </form>
+        <div class="portfolio-grid">
+          <section>
+            <p class="eyebrow">Offene Positionen</p>
+            <div id="paper-positions" class="portfolio-table-wrap">
+              <div class="empty-state">Keine offenen Positionen.</div>
+            </div>
+          </section>
+          <section>
+            <p class="eyebrow">Historie</p>
+            <div id="paper-orders" class="portfolio-table-wrap">
+              <div class="empty-state">Noch keine Orders.</div>
+            </div>
+          </section>
+        </div>
+      </section>
+    </div>
+
+    <script type="module" src="./src/main.js?v=20260528a"></script>
+  </body>
+</html>
